@@ -1,0 +1,187 @@
+local Success, Rayfield = pcall(function()
+    return loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+end)
+
+if not Success or not Rayfield then
+    warn("ไม่สามารถโหลด Rayfield UI ได้")
+    return
+end
+
+local Window = Rayfield:CreateWindow({
+   Name = "+1 Mine Per Click | By novyze (Creator)",
+   LoadingTitle = "กำลังโหลดระบบของ novyze...",
+   LoadingSubtitle = "Script Created by novyze (ผู้สร้างตัวจริง)",
+   ConfigurationSaving = { Enabled = false }
+})
+
+local MainTab = Window:CreateTab("ฟาร์มหลัก", "pickaxe")
+local PlayerTab = Window:CreateTab("ผู้เล่น", "user")
+local CreatorTab = Window:CreateTab("👑 ผู้สร้าง", "shield")
+
+local autoClickEnabled = false
+local autoRebirthEnabled = false
+local autoBuyPickaxeEnabled = false
+local autoBuyBackpackEnabled = false
+local autoSellEnabled = false
+
+-- ฟังก์ชันส่งสัญญาณรีโมทเกมอเนกประสงค์ทั่วไป (สำหรับซื้อของและขายของ)
+local function fireGameRemote(keyword)
+    pcall(function()
+        for _, v in ipairs(game:GetService("ReplicatedStorage"):GetDescendants()) do
+            local name = v.Name:lower()
+            if name:find(keyword:lower()) then
+                if v:IsA("RemoteEvent") then
+                    v:FireServer()
+                elseif v:IsA("RemoteFunction") then
+                    pcall(function() v:InvokeServer() end)
+                end
+            end
+        end
+    end)
+end
+
+-- ==========================================
+-- หมวดหมู่ "ฟาร์มหลัก"
+-- ==========================================
+MainTab:CreateSection("ระบบขุดและฟาร์มหลัก")
+
+MainTab:CreateToggle({
+   Name = "ออโต้คลิกขุดเหมือง (Auto Click)",
+   CurrentValue = false,
+   Callback = function(Value)
+      autoClickEnabled = Value
+      task.spawn(function()
+         while autoClickEnabled do
+            pcall(function()
+               for _, v in ipairs(game:GetService("ReplicatedStorage"):GetDescendants()) do
+                  if v:IsA("RemoteEvent") and (v.Name:lower():find("click") or v.Name:lower():find("mine") or v.Name:lower():find("tap")) then
+                     v:FireServer()
+                  end
+               end
+            end)
+            task.wait(0.1)
+         end
+      end)
+   end,
+})
+
+-- ระบบขายของอัตโนมัติ (Auto Sell)
+MainTab:CreateToggle({
+   Name = "💰 ขายของ/ขายแร่อัตโนมัติ (Auto Sell)",
+   CurrentValue = false,
+   Callback = function(Value)
+      autoSellEnabled = Value
+      task.spawn(function()
+         while autoSellEnabled do
+            fireGameRemote("sell")
+            fireGameRemote("store")
+            fireGameRemote("deposit")
+            task.wait(2) -- วนลูปขายทุกๆ 2 วินาที
+         end
+      end)
+   end,
+})
+
+-- ระบบ Auto Rebirth แบบเจาะจงเส้นทาง (รันทุกๆ 2 วินาที)
+MainTab:CreateToggle({
+   Name = "ออโต้รีเกิด (Auto Rebirth)",
+   CurrentValue = false,
+   Callback = function(Value)
+      autoRebirthEnabled = Value
+      task.spawn(function()
+         while autoRebirthEnabled do
+            pcall(function()
+               local args = {
+                   "Rebirth"
+               }
+               game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("Server"):WaitForChild("Rebirth"):FireServer(unpack(args))
+            end)
+            task.wait(2) -- ทำงานทุกๆ 2 วินาที
+         end
+      end)
+   end,
+})
+
+MainTab:CreateSection("ระบบซื้อของอัตโนมัติ (Auto Buy)")
+
+MainTab:CreateToggle({
+   Name = "ซื้อขวาน/พลั่วอัตโนมัติ (Auto Buy Pickaxe)",
+   CurrentValue = false,
+   Callback = function(Value)
+      autoBuyPickaxeEnabled = Value
+      task.spawn(function()
+         while autoBuyPickaxeEnabled do
+            fireGameRemote("pickaxe")
+            fireGameRemote("buy")
+            task.wait(1.5)
+         end
+      end)
+   end,
+})
+
+MainTab:CreateToggle({
+   Name = "ซื้อกระเป๋าเป้อัตโนมัติ (Auto Buy Backpack)",
+   CurrentValue = false,
+   Callback = function(Value)
+      autoBuyBackpackEnabled = Value
+      task.spawn(function()
+         while autoBuyBackpackEnabled do
+            fireGameRemote("backpack")
+            fireGameRemote("bag")
+            task.wait(1.5)
+         end
+      end)
+   end,
+})
+
+-- ==========================================
+-- หมวดหมู่ "ผู้เล่น"
+-- ==========================================
+PlayerTab:CreateSection("ตั้งค่าตัวละคร")
+
+PlayerTab:CreateSlider({
+   Name = "ความเร็วในการเดิน (WalkSpeed)",
+   Range = {16, 200},
+   Increment = 1,
+   CurrentValue = 16,
+   Callback = function(Value)
+      pcall(function()
+         game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = Value
+      end)
+   end,
+})
+
+PlayerTab:CreateSlider({
+   Name = "แรงกระโดด (JumpPower)",
+   Range = {50, 300},
+   Increment = 5,
+   CurrentValue = 50,
+   Callback = function(Value)
+      pcall(function()
+         game.Players.LocalPlayer.Character.Humanoid.JumpPower = Value
+      end)
+   end,
+})
+
+-- ==========================================
+-- หมวดหมู่ "ผู้สร้าง" (Creator Tab - เน้นตัวใหญ่เห็นชัดๆ)
+-- ==========================================
+CreatorTab:CreateSection("👑 ผู้สร้างสคริปต์ตัวจริง")
+
+CreatorTab:CreateParagraph({
+   Title = "⚠️ ประกาศสำคัญจากผู้สร้าง",
+   Content = "==============================\n🔥 SCRIPT CREATED BY: novyze 🔥\n==============================\nสคริปต์นี้ถูกพัฒนาและสร้างขึ้นโดย 'novyze' แต่เพียงผู้เดียว ห้ามแอบอ้างเด็ดขาด!"
+})
+
+CreatorTab:CreateParagraph({
+   Title = "Roblox Profile",
+   Content = "Username: novyze\nStatus: Developer / Creator"
+})
+
+-- แจ้งเตือนเด้งกลางจอตอนเปิดสคริปต์
+Rayfield:Notify({
+   Title = "👑 ยินดีต้อนรับผู้สร้าง novyze!",
+   Content = "สคริปต์ +1 Mine Per Click (เพิ่มระบบ Auto Sell) พัฒนาโดย novyze พร้อมใช้งานแล้ว!",
+   Duration = 7,
+   Image = 4483362458,
+})
